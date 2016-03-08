@@ -16,7 +16,7 @@
     </string>
 
     <string name="pref_title_display_name">Location</string>
-    <string name="pref_default_display_name">111156</string>
+    <string name="pref_default_display_name">prueba</string>
 
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     <string-array name="pref_example_list_titles">
