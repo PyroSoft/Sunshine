@@ -1,8 +1,10 @@
 package app.com.ferchofpz.sunshine;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -103,11 +105,14 @@ public class ForecastFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         int id = item.getItemId();
-        String postCode = "Bogota";
 
         switch(id){
             case R.id.action_refresh:
                 FetchWeatherTask weatherTask = new FetchWeatherTask();
+                SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                //If there's no value stored then we fall back to the default.
+                String postCode = settings.getString(getString(R.string.pref_location_key),
+                        getString(R.string.pref_default_display_name));
                 weatherTask.execute(postCode);
                 return true;
 
