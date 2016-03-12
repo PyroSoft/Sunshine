@@ -167,8 +167,8 @@ public class ForecastFragment extends Fragment {
                         .appendPath("daily")
                         .appendQueryParameter("q",params[0])
                         .appendQueryParameter("mode","json")
-                        .appendQueryParameter("units","metric")
-                        .appendQueryParameter("cnt","7")
+                        .appendQueryParameter("units",getString(R.string.pref_list_metric))
+                        .appendQueryParameter("cnt", "7")
                         .appendQueryParameter("appid",BuildConfig.OPEN_WEATHER_MAP_API_KEY);
 
                 //URL constructor:
@@ -249,8 +249,19 @@ public class ForecastFragment extends Fragment {
         /**
          * Prepare the weather high/lows for presentation.
          */
-        private String formatHighLows(double high, double low) {
-            // For presentation, assume the user doesn't care about tenths of a degree.
+        private String formatHighLows(double high, double low,String unitType) {
+            // Data is fetched in Celsius by default.
+            // If user prefers to see in Fahrenheit, convert the values here.
+            // We do this rather than fetching in Fahrenheit so that the user can
+            // change this option without us having to re-fetch the data once
+            // we start storing the values in a database.
+            if(unitType.equals(getString(R.string.pref_list_imperial))){
+                high = (high * 1.8) + 32;
+                low = (low * 1.8) + 32;
+            }else if(!unitType.equals(getString(R.string.pref_list_metric))){
+                Log.d(LOG_TAG,"Unit type not found: "+unitType);
+            }
+
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
 
@@ -310,7 +321,10 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
-                highAndLow = formatHighLows(high, low);
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                String unitType = sharedPreferences.getString(getString(R.string.pref_list_key),getString(R.string.pref_list_metric));
+
+                highAndLow = formatHighLows(high, low, unitType);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
