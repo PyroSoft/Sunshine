@@ -43,6 +43,7 @@ import java.util.List;
 public class ForecastFragment extends Fragment {
 
     public static ArrayAdapter<String> mForecastAdapter;
+    private final String LOG_TAG = ForecastFragment.class.getSimpleName();
 
     public ForecastFragment() {
     }
@@ -111,14 +112,33 @@ public class ForecastFragment extends Fragment {
             case R.id.action_refresh:
                 updateData();
                 return true;
-
             case R.id.action_settings:
                 Intent intent = new Intent(getActivity(),SettingsActivity.class);
                 startActivity(intent);
                 return true;
+            case R.id.action_map:
+                openPreferredLocationInMap();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void openPreferredLocationInMap(){
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String postCode = settings.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_default_display_name));
+
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q",postCode).build();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+        if(intent.resolveActivity(getActivity().getPackageManager())!=null){
+            startActivity(intent);
+        }else{
+            Log.d(LOG_TAG,"Couldn't call "+postCode+", no app found");
+        }
     }
 
     public void updateData(){
