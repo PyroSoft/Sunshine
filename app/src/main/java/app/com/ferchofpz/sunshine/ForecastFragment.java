@@ -43,6 +43,7 @@ import java.util.List;
 public class ForecastFragment extends Fragment {
 
     public static ArrayAdapter<String> mForecastAdapter;
+    private final String LOG_TAG = ForecastFragment.class.getSimpleName();
 
     public ForecastFragment() {
     }
@@ -62,7 +63,7 @@ public class ForecastFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView LForecast = (ListView) rootView.findViewById(R.id.listview_forecast);
 
-        String[] forecastArray = new String[] {
+        /*String[] forecastArray = new String[] {
                 "1st day weather",
                 "2nd day weather",
                 "3rd day weather",
@@ -72,14 +73,15 @@ public class ForecastFragment extends Fragment {
                 "7th day weather",
         };
 
-        List<String> weekForecast = new ArrayList<String>(Arrays.asList(forecastArray));
+        List<String> weekForecast = new ArrayList<String>(Arrays.asList(forecastArray));*/
 
         mForecastAdapter = new ArrayAdapter<String>(
                 getActivity(), //Current context (this activity)
                 R.layout.list_item_forecast, //The name of the layout
                 R.id.list_item_forecast_textview, //The ID of the TextView to populate
-                weekForecast); //The array
+                new ArrayList<String>()); //The array
         LForecast.setAdapter(mForecastAdapter);
+        updateData();
 
         LForecast.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -89,7 +91,7 @@ public class ForecastFragment extends Fragment {
                 toast.show();
                 */
                 Intent intent = new Intent(getActivity(), DetailActivity.class); //Contexto y la clase que se va a llamar explicitamente
-                intent.putExtra(Intent.EXTRA_TEXT,mForecastAdapter.getItem(position)); //Datos a enviar
+                intent.putExtra(Intent.EXTRA_TEXT, mForecastAdapter.getItem(position)); //Datos a enviar
                 startActivity(intent);
             }
         });
@@ -108,21 +110,50 @@ public class ForecastFragment extends Fragment {
 
         switch(id){
             case R.id.action_refresh:
-                FetchWeatherTask weatherTask = new FetchWeatherTask();
-                SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
-                //If there's no value stored then we fall back to the default.
-                String postCode = settings.getString(getString(R.string.pref_location_key),
-                        getString(R.string.pref_default_display_name));
-                weatherTask.execute(postCode);
+                updateData();
                 return true;
-
             case R.id.action_settings:
                 Intent intent = new Intent(getActivity(),SettingsActivity.class);
                 startActivity(intent);
                 return true;
+            case R.id.action_map:
+                openPreferredLocationInMap();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void openPreferredLocationInMap(){
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String postCode = settings.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_default_display_name));
+
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q",postCode).build();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+        if(intent.resolveActivity(getActivity().getPackageManager())!=null){
+            startActivity(intent);
+        }else{
+            Log.d(LOG_TAG,"Couldn't call "+postCode+", no app found");
+        }
+    }
+
+    public void updateData(){
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        //If there's no value stored then we fall back to the default.
+        String postCode = settings.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_default_display_name));
+        weatherTask.execute(postCode);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateData();
     }
 
     //New thread
@@ -140,7 +171,7 @@ public class ForecastFragment extends Fragment {
             BufferedReader reader = null;
 
             //Will contain the way JSON response as a string
-            String forecastJsonString = null;
+            String forecastJsonString;
 
             try{
                 //Building the url
@@ -156,8 +187,8 @@ public class ForecastFragment extends Fragment {
                         .appendPath("daily")
                         .appendQueryParameter("q",params[0])
                         .appendQueryParameter("mode","json")
-                        .appendQueryParameter("units","metric")
-                        .appendQueryParameter("cnt","7")
+                        .appendQueryParameter("units",getString(R.string.pref_list_metric))
+                        .appendQueryParameter("cnt", "7")
                         .appendQueryParameter("appid",BuildConfig.OPEN_WEATHER_MAP_API_KEY);
 
                 //URL constructor:
@@ -238,8 +269,19 @@ public class ForecastFragment extends Fragment {
         /**
          * Prepare the weather high/lows for presentation.
          */
-        private String formatHighLows(double high, double low) {
-            // For presentation, assume the user doesn't care about tenths of a degree.
+        private String formatHighLows(double high, double low,String unitType) {
+            // Data is fetched in Celsius by default.
+            // If user prefers to see in Fahrenheit, convert the values here.
+            // We do this rather than fetching in Fahrenheit so that the user can
+            // change this option without us having to re-fetch the data once
+            // we start storing the values in a database.
+            if(unitType.equals(getString(R.string.pref_list_imperial))){
+                high = (high * 1.8) + 32;
+                low = (low * 1.8) + 32;
+            }else if(!unitType.equals(getString(R.string.pref_list_metric))){
+                Log.d(LOG_TAG,"Unit type not found: "+unitType);
+            }
+
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
 
@@ -299,7 +341,10 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
-                highAndLow = formatHighLows(high, low);
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                String unitType = sharedPreferences.getString(getString(R.string.pref_list_key),getString(R.string.pref_list_metric));
+
+                highAndLow = formatHighLows(high, low, unitType);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
