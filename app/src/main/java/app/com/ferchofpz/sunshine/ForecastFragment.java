@@ -62,7 +62,7 @@ public class ForecastFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView LForecast = (ListView) rootView.findViewById(R.id.listview_forecast);
 
-        String[] forecastArray = new String[] {
+        /*String[] forecastArray = new String[] {
                 "1st day weather",
                 "2nd day weather",
                 "3rd day weather",
@@ -72,14 +72,15 @@ public class ForecastFragment extends Fragment {
                 "7th day weather",
         };
 
-        List<String> weekForecast = new ArrayList<String>(Arrays.asList(forecastArray));
+        List<String> weekForecast = new ArrayList<String>(Arrays.asList(forecastArray));*/
 
         mForecastAdapter = new ArrayAdapter<String>(
                 getActivity(), //Current context (this activity)
                 R.layout.list_item_forecast, //The name of the layout
                 R.id.list_item_forecast_textview, //The ID of the TextView to populate
-                weekForecast); //The array
+                new ArrayList<String>()); //The array
         LForecast.setAdapter(mForecastAdapter);
+        updateData();
 
         LForecast.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -89,7 +90,7 @@ public class ForecastFragment extends Fragment {
                 toast.show();
                 */
                 Intent intent = new Intent(getActivity(), DetailActivity.class); //Contexto y la clase que se va a llamar explicitamente
-                intent.putExtra(Intent.EXTRA_TEXT,mForecastAdapter.getItem(position)); //Datos a enviar
+                intent.putExtra(Intent.EXTRA_TEXT, mForecastAdapter.getItem(position)); //Datos a enviar
                 startActivity(intent);
             }
         });
@@ -108,12 +109,7 @@ public class ForecastFragment extends Fragment {
 
         switch(id){
             case R.id.action_refresh:
-                FetchWeatherTask weatherTask = new FetchWeatherTask();
-                SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
-                //If there's no value stored then we fall back to the default.
-                String postCode = settings.getString(getString(R.string.pref_location_key),
-                        getString(R.string.pref_default_display_name));
-                weatherTask.execute(postCode);
+                updateData();
                 return true;
 
             case R.id.action_settings:
@@ -123,6 +119,21 @@ public class ForecastFragment extends Fragment {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void updateData(){
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        //If there's no value stored then we fall back to the default.
+        String postCode = settings.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_default_display_name));
+        weatherTask.execute(postCode);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateData();
     }
 
     //New thread
@@ -140,7 +151,7 @@ public class ForecastFragment extends Fragment {
             BufferedReader reader = null;
 
             //Will contain the way JSON response as a string
-            String forecastJsonString = null;
+            String forecastJsonString;
 
             try{
                 //Building the url
