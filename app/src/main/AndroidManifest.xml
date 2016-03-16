@@ -3,6 +3,7 @@
     package="app.com.ferchofpz.sunshine">
 
     <!-- Mother, may i access the internet? -->
+    <!-- No, Nelson -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
