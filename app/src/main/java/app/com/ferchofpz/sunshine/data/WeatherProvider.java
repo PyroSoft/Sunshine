@@ -290,13 +290,13 @@ public class WeatherProvider extends ContentProvider {
         switch(match){
             case WEATHER:
                 rowsDeleted = db.delete(WeatherContract.WeatherEntry.TABLE_NAME,selection,selectionArgs);
-                if(rowsDeleted == 0)
-                    throw new android.database.SQLException("Failed to delete row into " + uri);
+                //if(rowsDeleted == 0)
+                //    throw new android.database.SQLException("Failed to delete row into " + uri);
                 break;
             case LOCATION:
                 rowsDeleted = db.delete(WeatherContract.LocationEntry.TABLE_NAME,selection,selectionArgs);
-                if(rowsDeleted == 0)
-                    throw new android.database.SQLException("Failed to delete row into " + uri);
+                //if(rowsDeleted == 0)
+                //    throw new android.database.SQLException("Failed to delete row into " + uri);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

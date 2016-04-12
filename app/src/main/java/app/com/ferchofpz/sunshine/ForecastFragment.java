@@ -130,8 +130,7 @@ public class ForecastFragment extends Fragment {
         //If there's no value stored then we fall back to the default.
         String postCode = settings.getString(getString(R.string.pref_location_key),
                 getString(R.string.pref_default_display_name));
-        //super.onStart();
-        //updateWeather();
+        weatherTask.execute(postCode);
     }
 
     @Override
