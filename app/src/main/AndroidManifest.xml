@@ -38,6 +38,9 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="app.com.ferchofpz.sunshine.MainActivity" />
         </activity>
+        <provider
+            android:authorities="app.com.ferchofpz.sunshine"
+            android:name=".data.WeatherProvider"/>
     </application>
 
 </manifest>
